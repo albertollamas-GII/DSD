@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domotica > Agente</title>
+</head>
+
+<body>
+    <h1>Estado del agente</h1>
+    <h2 id="estado_agente">Inactivo</h2>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const LIMITE_TEMP = {
+            MAX: 30,
+            MIN: 10
+        };
+
+        const LIMITE_LUM = {
+            MAX: 70,
+            MIN: 20
+        };
+
+        var serviceURL = 'localhost:8080';
+        var socket = io.connect(serviceURL);
+
+        socket.on('connect', function (params) {
+            socket.emit('actualizarSensores');
+            document.getElementById("estado_agente").innerText = "Activo";
+        });
+        socket.on('actualizarSensores', function (data) {
+            string = "";
+            if (data.temperatura < LIMITE_TEMP.MIN) {
+                string += '¡Alerta! Temperatura baja\n';
+                socket.emit('alertaTemperatura', {limite:"min"});
+            }
+            if (data.temperatura > LIMITE_TEMP.MAX) {
+                string += '¡Alerta! Temperatura alta\n';
+                socket.emit('alertaTemperatura', {limite:"max"});
+            }
+            if (data.luminosidad < LIMITE_LUM.MIN) {
+                string += '¡Alerta! Poca luz\n';
+                socket.emit('alertaLuminosidad', {limite:"min"});
+            }
+            if (data.luminosidad > LIMITE_LUM.MAX) {
+                string += '¡Alerta! Mucha luz\n';
+                socket.emit('alertaLuminosidad', {limite:"max"});
+            }
+            console.log(string);
+            socket.emit('alarmas', string);
+        });
+        socket.on('disconnect', function (params) {
+            document.getElementById("estado_agente").innerText = "Inactivo";
+        });
+    </script>
+</body>
+
+<style>
+    h1, h2{
+        margin-top: 4%;
+        text-align:center;
+    }
+    	
+    body{
+	    background-repeat: no-repeat;
+	    background-size: cover;
+	    background-color: aliceblue;
+	    font-family: 'Work Sans', sans-serif;
+	    font-weight: 100;
+    }
+</style>
+
+</html>

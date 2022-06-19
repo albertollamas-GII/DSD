@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Domotica > Sensores</title>
+    </head>
+
+    <body>
+        <h2>Recogida de datos de los sensores</h2>
+        <div>
+            <label for="">Temperatura</label>
+            <input type="text" id="temp">
+        </div>
+
+        <div>
+            <label for="">Luminosidad</label>
+            <input type="text" id="lum">
+        </div>
+
+        <button onclick="enviarInformacion()">Enviar Informacion</button>
+        
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript">
+            var serviceURL = 'localhost:8080';
+            var socket = io.connect(serviceURL);
+
+            socket.on('connect', function(){
+                console.log("Conexion establecida!")
+            });
+
+            function enviarInformacion(){
+                var temp = document.getElementById("temp").value;
+                var lumi = document.getElementById("lum").value;
+                var datetime = new Date();
+                var time = datetime.toString();
+                console.log(time);
+
+                socket.emit('informacionSensores', { temperatura: temp, luminosidad: lumi, timeStamp: time });
+
+                document.getElementById("temp").value = "";
+                document.getElementById("lum").value = "";
+
+            }
+        </script>
+    </body>
+
+    <style>
+        body{
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-color: aliceblue;
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 100;
+        }
+
+        body div {
+            margin: 3%;
+        }
+
+        button {
+            border: solid;
+            font-family: 'Work Sans', sans-serif;
+            background-color: beige;
+            padding: 1%;
+            font-size: 17px;
+            border-radius: 20px;
+        }
+
+        label {
+            margin-right: 2%;
+        }
+    </style>
+</html>

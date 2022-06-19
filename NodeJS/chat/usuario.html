@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ChatConcurrente</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="todo">
+            <div class="full">
+                <h1>
+                    ChatConcurrente
+                    <button id="borrar" class="btn btn-danger">Borrar chat</button>
+                </h1>
+                <div id="estado"></div>
+                <div id="chat">
+                    <input type="text" id="nombreUsuario" class="" placeholder="Introduce tu nombre...">
+                    <br>
+                    <div class="">
+                        <div id="mensajes" class="">
+
+                        </div>
+                    </div>
+                    <br>
+                    <textarea id="texto" class="" placeholder="Introduce tu mensaje..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        (function () {
+
+            // Elementos a modificar
+            var status = document.getElementById('estado');
+            var mensajes = document.getElementById('mensajes');
+            var textarea = document.getElementById('texto');
+            var nombreUsuario = document.getElementById('nombreUsuario');
+            var btnBorrar = document.getElementById('borrar');
+
+            // Damos un valor por defecto al estado
+            var statusDefault = status.textContent;
+
+            var setStatus = function (s) {
+                // Definirmos el estado
+                status.textContent = s;
+
+                //Si no es correcto le damos un tiempo de espera
+                if (s !== statusDefault) {
+                    var delay = setTimeout(function () {
+                        setStatus(statusDefault);
+                    }, 4000);
+                }
+            }
+
+            // Conexion con socket.io
+            var serviceURL = document.URL;
+            var socket = io.connect(serviceURL);
+
+            // Comprobamos que estamos bien conectados
+            if (socket !== undefined) {
+                console.log('Conectados al socket...');
+
+                // Manejamos la salida (envio de un mensaje)
+                socket.on('salida', function (data) {
+                    //console.log(data);
+                    if (data.length) {
+                        for (var x = 0; x < data.length; x++) {
+                            // Creamos el mensaje de salida
+                            var message = document.createElement('div');
+                            message.setAttribute('class', 'mensajeChat');
+                            message.textContent = data[x].name + ": " + data[x].message;
+                            mensajes.appendChild(message);
+                            mensajes.insertBefore(message, mensajes.firstChild);
+                        }
+                    }
+                });
+
+                // Comprobamos estado servidor
+                socket.on('status', function (data) {
+                    // Obtenemos el mensaje de estado
+                    setStatus((typeof data === 'object') ? data.message : data);
+
+                    // Si el estado esta vacío, vaciamos area texto
+                    if (data.clear) {
+                        textarea.value = '';
+                    }
+                });
+
+                // Manejamos entrada datos
+                textarea.addEventListener('keydown', function (event) {
+                    //Se utliza 13 porque es la tecla que se usa en JavaScript para la tecla enter
+                    //es decir, escribimos el mensaje y si le damos a enter se envia
+                    //Si pulsa shift y enter, no se envia y hace un salto de linea (event.shiftKey)
+                    if (event.which === 13 && event.shiftKey == false) {
+                        // Envia al servidor
+                        socket.emit('entrada', {
+                            name: nombreUsuario.value,
+                            message: textarea.value
+                        });
+                        //Para evitar que enter haga lo que deba hacer
+                        event.preventDefault();
+                    }
+                })
+
+                // Hacemos que cuando pulse el boton de borrar se borre
+                btnBorrar.addEventListener('click', function () {
+                    socket.emit('clear');
+                });
+
+                // Borramos los mensajes
+                socket.on('cleared', function () {
+                    mensajes.textContent = '';
+                });
+            }
+
+        })();
+    </script>
+</body>
+
+    <style>
+        h1{
+    	    margin-top: 4%;
+    	    text-align:center;
+    	}
+    	
+    	body{
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-color: aliceblue;
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 100;
+        }
+
+        #mensajes{
+            height: 300px;
+            font-family: 'Work Sans', sans-serif;
+            border-radius: 10px;
+            border: solid;
+            padding: 1%;
+            border-width: 1px;
+            margin: 2%;
+        }
+        .ful {
+            align-items: center;
+            text-align: center;
+        }
+        #chat {
+            border: solid;
+            border-radius: 10px;
+            text-align: center;
+            width: 50%;
+            align-items: center;
+            margin-left: 25%;
+        }
+
+        #nombreUsuario, #texto{
+            font-family: 'Work Sans', sans-serif;
+            border-radius: 10px;
+            border: solid;
+            padding: 1%;
+            margin-top: 2%;
+            margin-bottom: 2%;
+            border-width: 1px;
+        }
+
+        button {
+            border: solid;
+            font-family: 'Work Sans', sans-serif;
+            background-color: rgba(245, 65, 65, 0.753);
+            padding: 2%;
+            font-size: 17px;
+            border-radius: 10px;
+            margin-left: 4%;
+        }
+
+    </style>
+
+</html>

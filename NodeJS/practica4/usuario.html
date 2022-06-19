@@ -1,0 +1,175 @@
+<html>
+    <head>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+        <title>Domotica > Usuario</title>
+    </head>
+    <body>
+    	<h1>Sistema domótico básico</h1>
+        <span id="mensaje_servicio"></span>
+        
+        <div class="container">
+            <h2>Estado de los sensores</h2>
+            <p>Datos actualizados a las </p> <p id="timeStamp"></p>
+            <div>
+                <div>
+                    <h4>Temperatura</h4>
+                    <p id = "temp"></p>
+                </div>
+
+                <div>
+                    <h4>Luminosidad</h4>
+                    <p id="lum"></p>
+                </div>
+            </div>
+
+            <h2>Estado de los actuadores</h2>
+            
+            <div>
+                <h4>Aire acondicionado</h4>
+                <p id="ac"></p>
+                <button onclick="cambioAC()">Cambiar Estado AC</button>
+                <h4>Persiana</h4>
+                <p id="pers"></p>
+                <button onclick="cambioPers()">Cambiar Estado Persiana</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <h2>Estadisticas</h2>
+            <p>Numero de muestras</p>
+            <p id="total"></p>
+            <p>Mínimo</p>
+            <p id="minimo"></p>
+            <p>Máximo</p>
+            <p id="maximo"></p>
+        </div>
+    </body>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript">
+        function mostrar_mensaje(msg) {
+                var span_msg = document.getElementById('mensaje_servicio');
+                span_msg.innerHTML = msg;
+            }
+
+            function actualizarLista(usuarios) {
+                var listContainer = document.getElementById('lista_usuarios');
+                listContainer.innerHTML = '';
+                var listElement = document.createElement('ul');
+                listContainer.appendChild(listElement);
+                var num = usuarios.length;
+                for (var i = 0; i < num; i++) {
+                    var listItem = document.createElement('li');
+                    listItem.innerHTML = usuarios[i].address + ":" + usuarios[i].port;
+                    listElement.appendChild(listItem);
+                }
+            }
+
+            function cambioAC() {
+                socket.emit('aireAcondicionado', 0);
+            }
+
+            function cambioPers() {
+                socket.emit('persiana',0);
+            }
+
+            var serviceURL = document.URL;
+            var socket = io.connect(serviceURL);
+            socket.on('connect', function () {
+                socket.emit('estadisticas', 0);
+            });
+
+            socket.on('output-evt', function (data) {
+                mostrar_mensaje('Mensaje de servicio: ' + data);
+            });
+
+            socket.on('disconnect', function () {
+                mostrar_mensaje('El servicio ha dejado de funcionar!! Reinicia por favor');
+            });
+
+            socket.on('actualizarSensores', function(data){
+            	 console.log("Llega informacion sensores");
+                temperatur = document.getElementById("temp");
+                luminosida = document.getElementById("lum");
+                fech = document.getElementById("timeStamp");
+                temperatur.innerText = data.temperatura;
+                luminosida.innerText = data.luminosidad;
+                fech.innerText = data.timeStamp;
+                socket.emit("estadisticas",0);
+            });
+
+            socket.on('actualizarActuadores', function(data){
+                console.log(data);
+                aire = document.getElementById("ac");
+                persiana = document.getElementById("pers");
+                if (data.aire == true)
+                    aire.innerText = "ON";
+                else
+                    aire.innerText = "OFF";
+
+                if (data.persiana == true)
+                    persiana.innerText = "Abierta";
+                else
+                    persiana.innerText = "Cerrada";
+            });
+
+            socket.on('alarmas', function(data){
+                mostrar_mensaje(data);
+            });
+
+            socket.on('estadisticas', function(data){
+                console.log("Estadisticas");
+                total = document.getElementById("total");
+                minimo = document.getElementById("minimo");
+                maximo = document.getElementById("maximo");
+
+                total.innerText = data.total;
+                console.log(data.max_t);
+                maximo.innerText = "Temperatura: " + data.max_t + " Luminosidad: " + data.max_l;
+                minimo.innerText = "Temperatura: " + data.min_t + " Luminosidad: " + data.min_l;
+
+            });
+    </script>
+
+    <style>
+    
+    	
+    	h1{
+    	    margin-top: 4%;
+    	    text-align:center;
+    	}
+    	
+    	body{
+	    background-repeat: no-repeat;
+	    background-size: cover;
+	    background-color: aliceblue;
+	    font-family: 'Work Sans', sans-serif;
+	    font-weight: 100;
+        }
+        
+        body div {
+            background: transparent;
+            align-items: center;
+        }
+    	
+        .container{
+            border: solid;
+            float: left;
+            margin: 12%;
+            margin-top: 0%;
+            padding: 2%;
+            border-radius: 10px;
+        }
+
+        button {
+            border: solid;
+            font-family: 'Work Sans', sans-serif;
+            background-color: beige;
+            padding: 2%;
+            font-size: 17px;
+            border-radius: 10px;
+        }
+        
+        
+    </style>
+</html>
